@@ -14,107 +14,22 @@ jobs:
     - run: npm install --global node-gyp prebuildify
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile --ignore-scripts
+
+    - name: Verify tools
+      shell: cmd
+      run: |
+        node --version
+        npm --version
+        node-gyp --version
+        where node-gyp
+
     - name: Prebuild x64
       shell: cmd
+      env:
+        npm_config_node_gyp: C:\npm\prefix\node_modules\node-gyp\bin\node-gyp.js
       run: npx prebuildify --napi --arch x64
+
     - uses: actions/upload-artifact@v4
       with:
         name: windows
         path: prebuilds
-
-  prebuild-linux:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: |
-        sudo apt-get update
-        sudo apt-get install -y libxrandr-dev libxtst-dev
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile --ignore-scripts
-    - run: yarn prebuild --arch x64
-    - run: yarn prebuild --arch arm64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: linux
-        path: prebuilds
-
-  prebuild-darwin-x64:
-    runs-on: macos-15-intel
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile --ignore-scripts
-    - run: yarn prebuild --arch x64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: darwin-x64
-        path: prebuilds
-
-  prebuild-darwin-arm64:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile --ignore-scripts
-    - run: yarn prebuild --arch arm64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: darwin-arm64
-        path: prebuilds
-
-  create-release:
-    needs:
-    - prebuild-windows
-    - prebuild-linux
-    - prebuild-darwin-x64
-    - prebuild-darwin-arm64
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-    - uses: actions/download-artifact@v4
-      with:
-        name: windows
-        path: prebuilds/windows
-    - uses: actions/download-artifact@v4
-      with:
-        name: linux
-        path: prebuilds/linux
-    - uses: actions/download-artifact@v4
-      with:
-        name: darwin-x64
-        path: prebuilds/darwin-x64
-    - uses: actions/download-artifact@v4
-      with:
-        name: darwin-arm64
-        path: prebuilds/darwin-arm64
-
-    - name: Archive prebuilds
-      run: |
-        cd prebuilds
-        zip -r ../prebuilds-windows.zip windows/
-        zip -r ../prebuilds-linux.zip linux/
-        zip -r ../prebuilds-darwin-x64.zip darwin-x64/
-        zip -r ../prebuilds-darwin-arm64.zip darwin-arm64/
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: prebuilds-${{ github.sha }}
-        name: Prebuilds ${{ github.sha }}
-        draft: false
-        prerelease: false
-        files: |
-          prebuilds-windows.zip
-          prebuilds-linux.zip
-          prebuilds-darwin-x64.zip
-          prebuilds-darwin-arm64.zip
