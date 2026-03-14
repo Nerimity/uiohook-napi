@@ -4,7 +4,7 @@ on: push
 
 jobs:
   prebuild-windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v4
       with:
@@ -20,12 +20,12 @@ jobs:
         path: prebuilds
 
   prebuild-linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/setup-node@v4 
+    - uses: actions/setup-node@v4
     - run: |
         sudo apt-get update
         sudo apt-get install -y libxrandr-dev libxtst-dev
@@ -38,8 +38,8 @@ jobs:
         name: linux
         path: prebuilds
 
-  prebuild-darwin:
-    runs-on: macos-12
+  prebuild-darwin-x64:
+    runs-on: macos-15-intel
     steps:
     - uses: actions/checkout@v4
       with:
@@ -48,17 +48,32 @@ jobs:
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
     - run: yarn prebuild --arch x64
+    - uses: actions/upload-artifact@v4
+      with:
+        name: darwin-x64
+        path: prebuilds
+
+  prebuild-darwin-arm64:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: actions/setup-node@v4
+    - run: yarn apply-libuiohook-patch
+    - run: yarn --frozen-lockfile
     - run: yarn prebuild --arch arm64
     - uses: actions/upload-artifact@v4
       with:
-        name: darwin
+        name: darwin-arm64
         path: prebuilds
 
   create-release:
     needs:
     - prebuild-windows
     - prebuild-linux
-    - prebuild-darwin
+    - prebuild-darwin-x64
+    - prebuild-darwin-arm64
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -73,15 +88,20 @@ jobs:
         path: prebuilds/linux
     - uses: actions/download-artifact@v4
       with:
-        name: darwin
-        path: prebuilds/darwin
+        name: darwin-x64
+        path: prebuilds/darwin-x64
+    - uses: actions/download-artifact@v4
+      with:
+        name: darwin-arm64
+        path: prebuilds/darwin-arm64
 
     - name: Archive prebuilds
       run: |
         cd prebuilds
         zip -r ../prebuilds-windows.zip windows/
         zip -r ../prebuilds-linux.zip linux/
-        zip -r ../prebuilds-darwin.zip darwin/
+        zip -r ../prebuilds-darwin-x64.zip darwin-x64/
+        zip -r ../prebuilds-darwin-arm64.zip darwin-arm64/
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -93,4 +113,5 @@ jobs:
         files: |
           prebuilds-windows.zip
           prebuilds-linux.zip
-          prebuilds-darwin.zip
+          prebuilds-darwin-x64.zip
+          prebuilds-darwin-arm64.zip
