@@ -6,16 +6,15 @@ jobs:
   prebuild-windows:
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
     - run: npm install --global node-gyp
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
     - run: yarn prebuild --arch x64
-    # - run: yarn prebuild --arch arm64
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: windows
         path: prebuilds
@@ -23,10 +22,10 @@ jobs:
   prebuild-linux:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
     - run: |
         sudo apt-get update
         sudo apt-get install -y libxrandr-dev libxtst-dev
@@ -34,7 +33,7 @@ jobs:
     - run: yarn --frozen-lockfile
     - run: yarn prebuild --arch x64
     - run: yarn prebuild --arch arm64
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: linux
         path: prebuilds
@@ -42,48 +41,56 @@ jobs:
   prebuild-darwin:
     runs-on: macos-12
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
     - run: yarn prebuild --arch x64
     - run: yarn prebuild --arch arm64
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: darwin
         path: prebuilds
 
-  build-package:
+  create-release:
     needs:
     - prebuild-windows
     - prebuild-linux
     - prebuild-darwin
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: windows
-        path: prebuilds
-    - uses: actions/download-artifact@v3
+        path: prebuilds/windows
+    - uses: actions/download-artifact@v4
       with:
         name: linux
-        path: prebuilds
-    - uses: actions/download-artifact@v3
+        path: prebuilds/linux
+    - uses: actions/download-artifact@v4
       with:
         name: darwin
-        path: prebuilds
-    - uses: actions/setup-node@v3
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile --ignore-scripts
-    - run: yarn tsc
-    - run: npm pack
-    - uses: actions/upload-artifact@v3
+        path: prebuilds/darwin
+
+    - name: Archive prebuilds
+      run: |
+        cd prebuilds
+        zip -r ../prebuilds-windows.zip windows/
+        zip -r ../prebuilds-linux.zip linux/
+        zip -r ../prebuilds-darwin.zip darwin/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: package
-        path: uiohook-napi-*.tgz
-        retention-days: 3
+        tag_name: prebuilds-${{ github.sha }}
+        name: Prebuilds ${{ github.sha }}
+        draft: false
+        prerelease: false
+        files: |
+          prebuilds-windows.zip
+          prebuilds-linux.zip
+          prebuilds-darwin.zip
