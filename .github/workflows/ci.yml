@@ -23,16 +23,15 @@ jobs:
         node-gyp --version
         where node-gyp
 
-    - name: Debug prebuildify source
+    - name: Debug prebuildify opts
       shell: cmd
       run: |
-        node -e "const fs = require('fs'); const lines = fs.readFileSync('node_modules/prebuildify/index.js', 'utf8').split('\n'); lines.slice(205, 220).forEach((l, i) => console.log(205+i, l));"
+        node -e "const path = require('path'); console.log('APPDATA:', process.env.APPDATA); console.log('npm prefix:', require('child_process').execSync('npm prefix -g').toString().trim());"
 
     - name: Prebuild x64
       shell: cmd
-      env:
-        npm_config_node_gyp: C:\npm\prefix\node_modules\node-gyp\bin\node-gyp.js
-      run: npx prebuildify --napi --arch x64
+      run: |
+        node -e "require('prebuildify')({napi: true, arch: 'x64', nodeGyp: require('path').join(require('child_process').execSync('npm prefix -g').toString().trim(), 'node_modules/node-gyp/bin/node-gyp.js')}, (err) => { if (err) { console.error(err); process.exit(1); } })"
 
     - uses: actions/upload-artifact@v4
       with:
