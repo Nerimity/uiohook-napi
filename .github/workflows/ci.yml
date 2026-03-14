@@ -16,6 +16,10 @@ jobs:
     - run: npm install --global node-gyp prebuildify
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile --ignore-scripts
+    - name: Patch prebuildify for Windows
+      shell: cmd
+      run: |
+        node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
     - name: Prebuild x64
       shell: cmd
       run: npx prebuildify --napi --arch x64
