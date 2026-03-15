@@ -177,10 +177,16 @@ class UiohookNapi extends EventEmitter {
 
 
   start () {
+    if (!lib) {
+      throw new Error('lib not loaded')
+    }
     lib.start(this.handler.bind(this))
   }
 
   stop () {
+    if (!lib) {
+      throw new Error('lib not loaded')
+    }
     lib.stop()
   }
 }
