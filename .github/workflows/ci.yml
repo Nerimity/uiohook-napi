@@ -9,7 +9,6 @@ on:
 
 env:
   ELECTRON_VERSION: ${{ inputs.electron_version }}
-  # This tells node-gyp where to get Electron headers globally
   npm_config_disturl: https://artifacts.electronjs.org/headers/dist
   npm_config_runtime: electron
   npm_config_target: ${{ inputs.electron_version }}
@@ -28,10 +27,11 @@ jobs:
     - run: npm install --global node-gyp prebuildify
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile --ignore-scripts
-    - name: Patch prebuildify for Windows
+    - name: Patch prebuildify and node-abi for Windows
       shell: cmd
       run: |
         node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
+        node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('41.0.2')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'41.0.2\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
     - name: Prebuild x64
       shell: cmd
       run: node_modules\.bin\prebuildify --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
@@ -52,6 +52,8 @@ jobs:
         sudo apt-get install -y libxrandr-dev libxtst-dev
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
+    - name: Patch node-abi for Linux
+      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('41.0.2')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'41.0.2\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
     - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
     - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
     - uses: actions/upload-artifact@v4
@@ -68,6 +70,8 @@ jobs:
     - uses: actions/setup-node@v4
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
+    - name: Patch node-abi for MacOS
+      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('41.0.2')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'41.0.2\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
     - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
     - uses: actions/upload-artifact@v4
       with:
@@ -83,6 +87,8 @@ jobs:
     - uses: actions/setup-node@v4
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
+    - name: Patch node-abi for MacOS ARM
+      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('41.0.2')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'41.0.2\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
     - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
     - uses: actions/upload-artifact@v4
       with:
