@@ -45,7 +45,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: prebuilds
+          path: prebuilds/**/node.napi.node
 
   prebuild-linux:
     runs-on: ubuntu-22.04
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: prebuilds
+          path: prebuilds/**/node.napi.node
 
   prebuild-darwin-x64:
     runs-on: macos-15-intel
@@ -81,4 +81,66 @@ jobs:
         with:
           node-version: 24
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile --ignore-
+        run: yarn install --frozen-lockfile --ignore-scripts
+      - run: yarn apply-libuiohook-patch
+      - name: Patch node-abi
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const abi = process.env.ABI_VERSION; s = s.replace('exports.getAbi = getAbi', 'exports.getAbi = () => \"' + abi + '\"'); fs.writeFileSync(f, s);"
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-x64
+          path: prebuilds/**/node.napi.node
+
+  prebuild-darwin-arm64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+      - run: yarn apply-libuiohook-patch
+      - name: Patch node-abi
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const abi = process.env.ABI_VERSION; s = s.replace('exports.getAbi = getAbi', 'exports.getAbi = () => \"' + abi + '\"'); fs.writeFileSync(f, s);"
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-arm64
+          path: prebuilds/**/node.napi.node
+
+  create-release:
+    needs:
+      [
+        prebuild-windows,
+        prebuild-linux,
+        prebuild-darwin-x64,
+        prebuild-darwin-arm64,
+      ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-prebuilds
+      - name: Rename and Prepare Assets
+        run: |
+          find all-prebuilds/windows -name "*.node" -exec cp {} nerimity-ptt-windows-x64.node \;
+          find all-prebuilds/linux -name "*.node" -exec cp {} nerimity-ptt-linux-x64.node \;
+          find all-prebuilds/darwin-x64 -name "*.node" -exec cp {} nerimity-ptt-darwin-x64.node \;
+          find all-prebuilds/darwin-arm64 -name "*.node" -exec cp {} nerimity-ptt-darwin-arm64.node \;
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "prebuilds-${{ env.ELECTRON_VERSION }}-${{ github.sha }}"
+          name: "Prebuilds Electron ${{ env.ELECTRON_VERSION }}"
+          files: |
+            nerimity-ptt-windows-x64.node
+            nerimity-ptt-linux-x64.node
+            nerimity-ptt-darwin-x64.node
+            nerimity-ptt-darwin-arm64.node
