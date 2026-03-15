@@ -130,10 +130,14 @@ jobs:
           path: all-prebuilds
       - name: Rename and Prepare Assets
         run: |
-          find all-prebuilds/windows -name "*.node" -exec cp {} nerimity-ptt-windows-x64.node \;
-          find all-prebuilds/linux -name "*.node" -exec cp {} nerimity-ptt-linux-x64.node \;
-          find all-prebuilds/darwin-x64 -name "*.node" -exec cp {} nerimity-ptt-darwin-x64.node \;
-          find all-prebuilds/darwin-arm64 -name "*.node" -exec cp {} nerimity-ptt-darwin-arm64.node \;
+          # The download-artifact v4 puts each named artifact in its own directory.
+          # We search recursively within those directories to find the single .node file.
+          find all-prebuilds/windows -name "*.node" -type f -exec cp {} nerimity-ptt-windows-x64.node \; || true
+          find all-prebuilds/linux -name "*.node" -type f -exec cp {} nerimity-ptt-linux-x64.node \; || true
+          find all-prebuilds/darwin-x64 -name "*.node" -type f -exec cp {} nerimity-ptt-darwin-x64.node \; || true
+          find all-prebuilds/darwin-arm64 -name "*.node" -type f -exec cp {} nerimity-ptt-darwin-arm64.node \; || true
+
+          ls -lh *.node
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
