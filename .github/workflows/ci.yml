@@ -30,7 +30,7 @@ jobs:
         node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
     - name: Prebuild x64
       shell: cmd
-      run: node_modules\.bin\prebuildify --runtime electron --target ${{ env.ELECTRON_VERSION }} --dist-url=https://electronjs.org/headers --arch x64
+      run: node_modules\.bin\prebuildify --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64 -- --dist-url=https://artifacts.electronjs.org/headers/dist
     - uses: actions/upload-artifact@v4
       with:
         name: windows
@@ -48,8 +48,8 @@ jobs:
         sudo apt-get install -y libxrandr-dev libxtst-dev
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --dist-url=https://electronjs.org/headers --arch x64
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --dist-url=https://electronjs.org/headers --arch arm64
+    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64 -- --dist-url=https://artifacts.electronjs.org/headers/dist
+    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64 -- --dist-url=https://artifacts.electronjs.org/headers/dist
     - uses: actions/upload-artifact@v4
       with:
         name: linux
@@ -64,7 +64,7 @@ jobs:
     - uses: actions/setup-node@v4
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --dist-url=https://electronjs.org/headers --arch x64
+    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64 -- --dist-url=https://artifacts.electronjs.org/headers/dist
     - uses: actions/upload-artifact@v4
       with:
         name: darwin-x64
@@ -79,7 +79,7 @@ jobs:
     - uses: actions/setup-node@v4
     - run: yarn apply-libuiohook-patch
     - run: yarn --frozen-lockfile
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --dist-url=https://electronjs.org/headers --arch arm64
+    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64 -- --dist-url=https://artifacts.electronjs.org/headers/dist
     - uses: actions/upload-artifact@v4
       with:
         name: darwin-arm64
