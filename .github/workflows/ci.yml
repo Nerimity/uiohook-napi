@@ -7,7 +7,6 @@ on:
       electron_version:
         description: 'Electron version to build for'
         required: true
-        default: '33.0.0'
 
 env:
   ELECTRON_VERSION: ${{ inputs.electron_version || '33.0.0' }}
