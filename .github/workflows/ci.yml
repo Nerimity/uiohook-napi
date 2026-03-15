@@ -4,14 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       electron_version:
-        description: "Electron version to build for"
+        description: "Electron version (e.g., 41.0.2)"
+        required: true
+      abi_version:
+        description: "ABI version (e.g., 145)"
         required: true
 
 env:
-  ELECTRON_VERSION: "${{ github.event.inputs.electron_version || '41.0.2' }}"
+  ELECTRON_VERSION: "${{ github.event.inputs.electron_version }}"
+  ABI_VERSION: "${{ github.event.inputs.abi_version }}"
   npm_config_disturl: "https://artifacts.electronjs.org/headers/dist"
   npm_config_runtime: "electron"
-  npm_config_target: "${{ github.event.inputs.electron_version || '41.0.2' }}"
+  npm_config_target: "${{ github.event.inputs.electron_version }}"
 
 jobs:
   prebuild-windows:
@@ -24,14 +28,17 @@ jobs:
         with:
           node-version: 24
       - uses: ilammy/msvc-dev-cmd@v1
-      - run: npm install --global node-gyp prebuildify
-      - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile --ignore-scripts
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+      - name: Global Tools
+        run: npm install --global node-gyp prebuildify
+      - name: Apply Patch
+        run: yarn apply-libuiohook-patch
       - name: Patch prebuildify and node-abi
         shell: cmd
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
-          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; const abi = process.env.ABI_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'' + abi + '\' },'); fs.writeFileSync(f, s); }"
       - name: Prebuild x64
         shell: cmd
         run: node_modules\.bin\prebuildify --runtime electron --target %ELECTRON_VERSION% --arch x64
@@ -52,11 +59,12 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y libxrandr-dev libxtst-dev
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
-          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; const abi = process.env.ABI_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'' + abi + '\' },'); fs.writeFileSync(f, s); }"
       - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
       - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
       - uses: actions/upload-artifact@v4
@@ -73,11 +81,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
-          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; const abi = process.env.ABI_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'' + abi + '\' },'); fs.writeFileSync(f, s); }"
       - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
       - uses: actions/upload-artifact@v4
         with:
@@ -93,11 +102,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
-          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; const abi = process.env.ABI_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'' + abi + '\' },'); fs.writeFileSync(f, s); }"
       - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
       - uses: actions/upload-artifact@v4
         with:
