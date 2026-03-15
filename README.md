@@ -32,14 +32,8 @@ interface UiohookNapi {
   on(event: 'keydown', listener: (e: UiohookKeyboardEvent) => void): this
   on(event: 'keyup', listener: (e: UiohookKeyboardEvent) => void): this
 
-  on(event: 'mousedown', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'mouseup', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'mousemove', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'click', listener: (e: UiohookMouseEvent) => void): this
-
   on(event: 'wheel', listener: (e: UiohookWheelEvent) => void): this
 
-  keyTap(key: keycode, modifiers?: keycode[])
   keyToggle(key: keycode, toggle: 'down' | 'up')
 }
 
@@ -51,27 +45,5 @@ export interface UiohookKeyboardEvent {
   keycode: number
 }
 
-export interface UiohookMouseEvent {
-  altKey: boolean
-  ctrlKey: boolean
-  metaKey: boolean
-  shiftKey: boolean
-  x: number
-  y: number
-  button: unknown
-  clicks: number
-}
 
-export interface UiohookWheelEvent {
-  altKey: boolean
-  ctrlKey: boolean
-  metaKey: boolean
-  shiftKey: boolean
-  x: number
-  y: number
-  clicks: number
-  amount: number
-  direction: WheelDirection
-  rotation: number
-}
 ```
