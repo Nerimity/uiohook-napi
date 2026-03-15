@@ -106,19 +106,11 @@ jobs:
 
     - name: Rename prebuilds
       run: |
-        echo "=== Windows ==="
-        find prebuilds/windows -type f
-        echo "=== Linux ==="
-        find prebuilds/linux -type f
-        echo "=== Darwin x64 ==="
-        find prebuilds/darwin-x64 -type f
-        echo "=== Darwin arm64 ==="
-        find prebuilds/darwin-arm64 -type f
-        mv prebuilds/windows/$(ls prebuilds/windows/) nerimity-ptt-windows-x64.node
-        mv prebuilds/linux/$(ls prebuilds/linux/x64/) nerimity-ptt-linux-x64.node
-        mv prebuilds/linux/$(ls prebuilds/linux/arm64/) nerimity-ptt-linux-arm64.node
-        mv prebuilds/darwin-x64/$(ls prebuilds/darwin-x64/) nerimity-ptt-darwin-x64.node
-        mv prebuilds/darwin-arm64/$(ls prebuilds/darwin-arm64/) nerimity-ptt-darwin-arm64.node
+        mv prebuilds/windows/win32-x64/node.napi.node nerimity-ptt-windows-x64.node
+        mv prebuilds/linux/linux-x64/node.napi.node nerimity-ptt-linux-x64.node
+        mv prebuilds/linux/linux-arm64/node.napi.node nerimity-ptt-linux-arm64.node
+        mv prebuilds/darwin-x64/darwin-x64/node.napi.node nerimity-ptt-darwin-x64.node
+        mv prebuilds/darwin-arm64/darwin-arm64/node.napi.node nerimity-ptt-darwin-arm64.node
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
