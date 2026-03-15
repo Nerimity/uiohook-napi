@@ -65,12 +65,18 @@ jobs:
       - name: Patch node-abi
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const abi = process.env.ABI_VERSION; s = s.replace('exports.getAbi = getAbi', 'exports.getAbi = () => \"' + abi + '\"'); fs.writeFileSync(f, s);"
-      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
-      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
+      - name: Prebuild x64
+        run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
+      - name: Prebuild arm64
+        run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: prebuilds
+          name: linux-x64
+          path: prebuilds/linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: prebuilds/linux-arm64
 
   prebuild-darwin-x64:
     runs-on: macos-15-intel
@@ -132,8 +138,8 @@ jobs:
       - name: Rename and Prepare Assets
         run: |
           find all-prebuilds/windows -path "*/win32-x64/*.node" -exec cp {} nerimity-ptt-windows-x64.node \;
-          find all-prebuilds/linux -path "*/linux-x64/*.node" -exec cp {} nerimity-ptt-linux-x64.node \;
-          find all-prebuilds/linux -path "*/linux-arm64/*.node" -exec cp {} nerimity-ptt-linux-arm64.node \;
+          find all-prebuilds/linux-x64 -path "*/linux-x64/*.node" -exec cp {} nerimity-ptt-linux-x64.node \;
+          find all-prebuilds/linux-arm64 -path "*/linux-arm64/*.node" -exec cp {} nerimity-ptt-linux-arm64.node \;
           find all-prebuilds/darwin-x64 -path "*/darwin-x64/*.node" -exec cp {} nerimity-ptt-darwin-x64.node \;
           find all-prebuilds/darwin-arm64 -path "*/darwin-arm64/*.node" -exec cp {} nerimity-ptt-darwin-arm64.node \;
       - name: Create Release
