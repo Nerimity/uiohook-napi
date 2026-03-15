@@ -113,7 +113,6 @@ jobs:
         with:
           name: darwin-arm64
           path: prebuilds
-
   create-release:
     needs:
       [
@@ -128,14 +127,15 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: prebuilds
+          path: all-prebuilds
       - name: Rename and Prepare Assets
         run: |
-          mv prebuilds/windows/win32-x64/node.napi.node nerimity-ptt-windows-x64.node
-          mv prebuilds/linux/linux-x64/node.napi.node nerimity-ptt-linux-x64.node
-          mv prebuilds/linux/linux-arm64/node.napi.node nerimity-ptt-linux-arm64.node
-          mv prebuilds/darwin-x64/darwin-x64/node.napi.node nerimity-ptt-darwin-x64.node
-          mv prebuilds/darwin-arm64/darwin-arm64/node.napi.node nerimity-ptt-darwin-arm64.node
+          # Use find to locate the specific files regardless of the exact ABI folder name
+          find all-prebuilds/windows -name "*.node" -exec mv {} nerimity-ptt-windows-x64.node \;
+          find all-prebuilds/linux -path "*/linux-x64/*.node" -exec mv {} nerimity-ptt-linux-x64.node \;
+          find all-prebuilds/linux -path "*/linux-arm64/*.node" -exec mv {} nerimity-ptt-linux-arm64.node \;
+          find all-prebuilds/darwin-x64 -name "*.node" -exec mv {} nerimity-ptt-darwin-x64.node \;
+          find all-prebuilds/darwin-arm64 -name "*.node" -exec mv {} nerimity-ptt-darwin-arm64.node \;
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
