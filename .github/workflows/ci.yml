@@ -6,6 +6,9 @@ on:
       electron_version:
         description: "Electron version to build for"
         required: true
+  push:
+    branches:
+      - master
 
 env:
   ELECTRON_VERSION: "${{ github.event.inputs.electron_version || '41.0.2' }}"
@@ -24,10 +27,10 @@ jobs:
         with:
           node-version: 24
       - uses: ilammy/msvc-dev-cmd@v1
+      - run: yarn install --frozen-lockfile # This installs your specific node-abi version
       - run: npm install --global node-gyp prebuildify
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile --ignore-scripts
-      - name: Patch prebuildify and node-abi
+      - name: Patch prebuildify (Shell Fix) and node-abi (Version Fix)
         shell: cmd
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
@@ -52,8 +55,8 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y libxrandr-dev libxtst-dev
+      - run: yarn install --frozen-lockfile
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
@@ -73,8 +76,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - run: yarn install --frozen-lockfile
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
@@ -93,8 +96,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - run: yarn install --frozen-lockfile
       - run: yarn apply-libuiohook-patch
-      - run: yarn --frozen-lockfile
       - name: Patch node-abi
         run: |
           node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"

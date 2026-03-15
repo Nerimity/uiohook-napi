@@ -34,7 +34,11 @@
     "typescript": "4.x.x"
   },
   "dependencies": {
-    "node-gyp-build": "4.x.x"
+    "node-gyp-build": "4.x.x",
+    "node-abi": "^3.78.0"
+  },
+  "resolutions": {
+    "node-abi": "^3.78.0"
   },
   "prebuild": {
     "test": "dist/prebuild-test-noop.js"
