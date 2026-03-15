@@ -64,14 +64,7 @@ void worker_dispatch_proc(uiohook_event* const event) {
     break;
 
   case EVENT_KEY_PRESSED:
-  case EVENT_KEY_RELEASED:
-  // case EVENT_KEY_TYPED:
-  case EVENT_MOUSE_CLICKED:
-  case EVENT_MOUSE_PRESSED:
-  case EVENT_MOUSE_RELEASED:
-  case EVENT_MOUSE_MOVED:
-  case EVENT_MOUSE_DRAGGED:
-  case EVENT_MOUSE_WHEEL: {
+  case EVENT_KEY_RELEASED: {
     user_dispatcher(event);
     break;
   }

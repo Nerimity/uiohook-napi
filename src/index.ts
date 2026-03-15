@@ -17,11 +17,6 @@ enum KeyToggle {
 export enum EventType {
   EVENT_KEY_PRESSED = 4,
   EVENT_KEY_RELEASED = 5,
-  EVENT_MOUSE_CLICKED = 6,
-  EVENT_MOUSE_PRESSED = 7,
-  EVENT_MOUSE_RELEASED = 8,
-  EVENT_MOUSE_MOVED = 9,
-  EVENT_MOUSE_WHEEL = 11
 }
 
 export interface UiohookKeyboardEvent {
@@ -34,41 +29,6 @@ export interface UiohookKeyboardEvent {
   keycode: number
 }
 
-export interface UiohookMouseEvent {
-  type: EventType.EVENT_MOUSE_CLICKED |
-    EventType.EVENT_MOUSE_MOVED |
-    EventType.EVENT_MOUSE_PRESSED |
-    EventType.EVENT_MOUSE_RELEASED
-  time: number
-  altKey: boolean
-  ctrlKey: boolean
-  metaKey: boolean
-  shiftKey: boolean
-  x: number
-  y: number
-  button: unknown
-  clicks: number
-}
-
-export interface UiohookWheelEvent {
-  type: EventType.EVENT_MOUSE_WHEEL
-  time: number
-  altKey: boolean
-  ctrlKey: boolean
-  metaKey: boolean
-  shiftKey: boolean
-  x: number
-  y: number
-  clicks: number
-  amount: number
-  direction: WheelDirection
-  rotation: number
-}
-
-export enum WheelDirection {
-  VERTICAL = 3,
-  HORIZONTAL = 4
-}
 
 export const UiohookKey = {
   Backspace: 0x000E,
@@ -198,21 +158,15 @@ export const UiohookKey = {
 } as const
 
 declare interface UiohookNapi {
-  on(event: 'input', listener: (e: UiohookKeyboardEvent | UiohookMouseEvent | UiohookWheelEvent) => void): this
+  on(event: 'input', listener: (e: UiohookKeyboardEvent) => void): this
 
   on(event: 'keydown', listener: (e: UiohookKeyboardEvent) => void): this
   on(event: 'keyup', listener: (e: UiohookKeyboardEvent) => void): this
 
-  on(event: 'mousedown', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'mouseup', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'mousemove', listener: (e: UiohookMouseEvent) => void): this
-  on(event: 'click', listener: (e: UiohookMouseEvent) => void): this
-
-  on(event: 'wheel', listener: (e: UiohookWheelEvent) => void): this
 }
 
 class UiohookNapi extends EventEmitter {
-  private handler (e: UiohookKeyboardEvent | UiohookMouseEvent | UiohookWheelEvent) {
+  private handler (e: UiohookKeyboardEvent) {
     this.emit('input', e)
     switch (e.type) {
       case EventType.EVENT_KEY_PRESSED:
@@ -220,21 +174,6 @@ class UiohookNapi extends EventEmitter {
         break
       case EventType.EVENT_KEY_RELEASED:
         this.emit('keyup', e)
-        break
-      case EventType.EVENT_MOUSE_CLICKED:
-        this.emit('click', e)
-        break
-      case EventType.EVENT_MOUSE_MOVED:
-        this.emit('mousemove', e)
-        break
-      case EventType.EVENT_MOUSE_PRESSED:
-        this.emit('mousedown', e)
-        break
-      case EventType.EVENT_MOUSE_RELEASED:
-        this.emit('mouseup', e)
-        break
-      case EventType.EVENT_MOUSE_WHEEL:
-        this.emit('wheel', e)
         break
     }
   }

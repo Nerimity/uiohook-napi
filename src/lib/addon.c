@@ -11,11 +11,10 @@ static bool is_worker_running = false;
 void dispatch_proc(uiohook_event* const event) {
   if (threadsafe_fn == NULL) return;
 
+  if (event->type != EVENT_KEY_PRESSED && event->type != EVENT_KEY_RELEASED) return;
+
   uiohook_event* copied_event = malloc(sizeof(uiohook_event));
   memcpy(copied_event, event, sizeof(uiohook_event));
-  if (copied_event->type == EVENT_MOUSE_DRAGGED) {
-    copied_event->type = EVENT_MOUSE_MOVED;
-  }
 
   napi_status status = napi_call_threadsafe_function(threadsafe_fn, copied_event, napi_tsfn_nonblocking);
   if (status == napi_closing) {
@@ -57,102 +56,22 @@ napi_value uiohook_to_js_event(napi_env env, uiohook_event* event) {
   status = napi_create_double(env, (double)event->time, &e_time);
   NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_double");
 
-  if (event->type == EVENT_KEY_PRESSED || event->type == EVENT_KEY_RELEASED) {
-    napi_value e_keycode;
-    status = napi_create_uint32(env, event->data.keyboard.keycode, &e_keycode);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
+  napi_value e_keycode;
+  status = napi_create_uint32(env, event->data.keyboard.keycode, &e_keycode);
+  NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
 
-    napi_property_descriptor descriptors[] = {
-      { "type",     NULL, NULL, NULL, NULL, e_type,     napi_enumerable, NULL },
-      { "time",     NULL, NULL, NULL, NULL, e_time,     napi_enumerable, NULL },
-      { "altKey",   NULL, NULL, NULL, NULL, e_altKey,   napi_enumerable, NULL },
-      { "ctrlKey",  NULL, NULL, NULL, NULL, e_ctrlKey,  napi_enumerable, NULL },
-      { "metaKey",  NULL, NULL, NULL, NULL, e_metaKey,  napi_enumerable, NULL },
-      { "shiftKey", NULL, NULL, NULL, NULL, e_shiftKey, napi_enumerable, NULL },
-      { "keycode",  NULL, NULL, NULL, NULL, e_keycode,  napi_enumerable, NULL },
-    };
-    status = napi_define_properties(env, event_obj, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_define_properties");
-    return event_obj;
-  }
-  else if (event->type == EVENT_MOUSE_MOVED || event->type == EVENT_MOUSE_PRESSED || event->type == EVENT_MOUSE_RELEASED || event->type == EVENT_MOUSE_CLICKED) {
-    napi_value e_x;
-    status = napi_create_int32(env, event->data.mouse.x, &e_x);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_int32");
-
-    napi_value e_y;
-    status = napi_create_int32(env, event->data.mouse.y, &e_y);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_int32");
-
-    napi_value e_button;
-    status = napi_create_uint32(env, event->data.mouse.button, &e_button);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
-
-    napi_value e_clicks;
-    status = napi_create_uint32(env, event->data.mouse.clicks, &e_clicks);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
-
-    napi_property_descriptor descriptors[] = {
-      { "type",     NULL, NULL, NULL, NULL, e_type,     napi_enumerable, NULL },
-      { "time",     NULL, NULL, NULL, NULL, e_time,     napi_enumerable, NULL },
-      { "altKey",   NULL, NULL, NULL, NULL, e_altKey,   napi_enumerable, NULL },
-      { "ctrlKey",  NULL, NULL, NULL, NULL, e_ctrlKey,  napi_enumerable, NULL },
-      { "metaKey",  NULL, NULL, NULL, NULL, e_metaKey,  napi_enumerable, NULL },
-      { "shiftKey", NULL, NULL, NULL, NULL, e_shiftKey, napi_enumerable, NULL },
-      { "x",        NULL, NULL, NULL, NULL, e_x,        napi_enumerable, NULL },
-      { "y",        NULL, NULL, NULL, NULL, e_y,        napi_enumerable, NULL },
-      { "button",   NULL, NULL, NULL, NULL, e_button,   napi_enumerable, NULL },
-      { "clicks",   NULL, NULL, NULL, NULL, e_clicks,   napi_enumerable, NULL },
-    };
-    status = napi_define_properties(env, event_obj, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_define_properties");
-    return event_obj;
-  }
-  else if (event->type == EVENT_MOUSE_WHEEL) {
-    napi_value e_x;
-    status = napi_create_int32(env, event->data.wheel.x, &e_x);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_int32");
-
-    napi_value e_y;
-    status = napi_create_int32(env, event->data.wheel.y, &e_y);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_int32");
-
-    napi_value e_clicks;
-    status = napi_create_uint32(env, event->data.wheel.clicks, &e_clicks);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
-
-    napi_value e_amount;
-    status = napi_create_uint32(env, event->data.wheel.amount, &e_amount);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
-
-    napi_value e_direction;
-    status = napi_create_uint32(env, event->data.wheel.direction, &e_direction);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_uint32");
-
-    napi_value e_rotation;
-    status = napi_create_int32(env, event->data.wheel.rotation, &e_rotation);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_create_int32");
-
-    napi_property_descriptor descriptors[] = {
-      { "type",      NULL, NULL, NULL, NULL, e_type,      napi_enumerable, NULL },
-      { "time",      NULL, NULL, NULL, NULL, e_time,      napi_enumerable, NULL },
-      { "altKey",    NULL, NULL, NULL, NULL, e_altKey,    napi_enumerable, NULL },
-      { "ctrlKey",   NULL, NULL, NULL, NULL, e_ctrlKey,   napi_enumerable, NULL },
-      { "metaKey",   NULL, NULL, NULL, NULL, e_metaKey,   napi_enumerable, NULL },
-      { "shiftKey",  NULL, NULL, NULL, NULL, e_shiftKey,  napi_enumerable, NULL },
-      { "x",         NULL, NULL, NULL, NULL, e_x,         napi_enumerable, NULL },
-      { "y",         NULL, NULL, NULL, NULL, e_y,         napi_enumerable, NULL },
-      { "clicks",    NULL, NULL, NULL, NULL, e_clicks,    napi_enumerable, NULL },
-      { "amount",    NULL, NULL, NULL, NULL, e_amount,    napi_enumerable, NULL },
-      { "direction", NULL, NULL, NULL, NULL, e_direction, napi_enumerable, NULL },
-      { "rotation",  NULL, NULL, NULL, NULL, e_rotation,  napi_enumerable, NULL },
-    };
-    status = napi_define_properties(env, event_obj, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
-    NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_define_properties");
-    return event_obj;
-  }
-
-  return NULL; // never
+  napi_property_descriptor descriptors[] = {
+    { "type",     NULL, NULL, NULL, NULL, e_type,     napi_enumerable, NULL },
+    { "time",     NULL, NULL, NULL, NULL, e_time,     napi_enumerable, NULL },
+    { "altKey",   NULL, NULL, NULL, NULL, e_altKey,   napi_enumerable, NULL },
+    { "ctrlKey",  NULL, NULL, NULL, NULL, e_ctrlKey,  napi_enumerable, NULL },
+    { "metaKey",  NULL, NULL, NULL, NULL, e_metaKey,  napi_enumerable, NULL },
+    { "shiftKey", NULL, NULL, NULL, NULL, e_shiftKey, napi_enumerable, NULL },
+    { "keycode",  NULL, NULL, NULL, NULL, e_keycode,  napi_enumerable, NULL },
+  };
+  status = napi_define_properties(env, event_obj, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
+  NAPI_FATAL_IF_FAILED(status, "uiohook_to_js_event", "napi_define_properties");
+  return event_obj;
 }
 
 void tsfn_to_js_proxy(napi_env env, napi_value js_callback, void* context, void* _event) {
@@ -264,7 +183,7 @@ napi_value AddonStop(napi_env env, napi_callback_info info) {
   }
 }
 
-void AddonCleanUp (void* arg) {
+void AddonCleanUp(void* arg) {
   if (is_worker_running) {
     uiohook_worker_stop();
   }
@@ -277,7 +196,7 @@ typedef enum {
   force_uint = 0xFFFFFFFF
 } key_tap_type;
 
-napi_value AddonKeyTap (napi_env env, napi_callback_info info) {
+napi_value AddonKeyTap(napi_env env, napi_callback_info info) {
   napi_status status;
 
   size_t info_argc = 2;
@@ -285,12 +204,10 @@ napi_value AddonKeyTap (napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &info_argc, info_argv, NULL, NULL);
   NAPI_THROW_IF_FAILED(env, status, NULL);
 
-  // [0] KeyCode
   uint32_t keycode;
   status = napi_get_value_uint32(env, info_argv[0], &keycode);
   NAPI_THROW_IF_FAILED(env, status, NULL);
 
-  // [1] KeyTapType
   key_tap_type tap_type;
   status = napi_get_value_uint32(env, info_argv[1], (int32_t*)&tap_type);
   NAPI_THROW_IF_FAILED(env, status, NULL);
