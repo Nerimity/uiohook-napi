@@ -23,7 +23,7 @@ export interface UiohookKeyboardEvent {
 }
 
 export const loadBin = (path: string) => {
-  lib = require("path");
+  lib = require(path);
 }
 
 export const UiohookKey = {
