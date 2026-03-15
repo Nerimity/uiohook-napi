@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-import { join } from 'path'
 let lib: AddonExports | undefined = undefined;
 
 interface AddonExports {
@@ -7,11 +6,6 @@ interface AddonExports {
   stop (): void
 }
 
-enum KeyToggle {
-  Tap = 0,
-  Down = 1,
-  Up = 2
-}
 
 export enum EventType {
   EVENT_KEY_PRESSED = 4,
@@ -28,6 +22,9 @@ export interface UiohookKeyboardEvent {
   keycode: number
 }
 
+export const loadBin = (path: string) => {
+  lib = require("path");
+}
 
 export const UiohookKey = {
   Backspace: 0x000E,
@@ -176,6 +173,8 @@ class UiohookNapi extends EventEmitter {
         break
     }
   }
+
+
 
   start () {
     lib.start(this.handler.bind(this))

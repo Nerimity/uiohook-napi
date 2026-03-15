@@ -1,12 +1,8 @@
 {
-  "name": "uiohook-napi",
-  "version": "1.5.4",
+  "name": "@nerimity/uiohook-napi",
+  "version": "1.6.0",
   "author": {
-    "name": "Alexander Drozdov"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/SnosMe/uiohook-napi.git"
+    "name": "SupertigerDev"
   },
   "license": "MIT",
   "keywords": [
@@ -29,12 +25,7 @@
     "apply-libuiohook-patch": "git -C ./libuiohook apply ../src/libuiohook.patch"
   },
   "files": [
-    "dist",
-    "binding.gyp",
-    "libuiohook/src",
-    "libuiohook/include",
-    "src/lib",
-    "prebuilds"
+    "dist"
   ],
   "devDependencies": {
     "@types/node": "18.x.x",
@@ -51,5 +42,13 @@
   "gypfile": true,
   "engines": {
     "node": ">= 16"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nerimity/uiohook-napi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nerimity/uiohook-napi/issues"
+  },
+  "homepage": "https://github.com/Nerimity/uiohook-napi#readme"
 }
