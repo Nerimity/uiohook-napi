@@ -4,127 +4,139 @@ on:
   workflow_dispatch:
     inputs:
       electron_version:
-        description: 'Electron version to build for'
+        description: "Electron version to build for"
         required: true
+  push:
+    branches:
+      - master
 
 env:
-  ELECTRON_VERSION: ${{ inputs.electron_version }}
-  npm_config_disturl: https://artifacts.electronjs.org/headers/dist
-  npm_config_runtime: electron
-  npm_config_target: ${{ inputs.electron_version }}
+  ELECTRON_VERSION: "${{ github.event.inputs.electron_version || '41.0.2' }}"
+  npm_config_disturl: "https://artifacts.electronjs.org/headers/dist"
+  npm_config_runtime: "electron"
+  npm_config_target: "${{ github.event.inputs.electron_version || '41.0.2' }}"
 
 jobs:
   prebuild-windows:
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 18
-    - uses: ilammy/msvc-dev-cmd@v1
-    - run: npm install --global node-gyp prebuildify
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile --ignore-scripts
-    - name: Patch prebuildify and node-abi
-      shell: cmd
-      run: |
-        node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
-        node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('${{ env.ELECTRON_VERSION }}')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'${{ env.ELECTRON_VERSION }}\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
-    - name: Prebuild x64
-      shell: cmd
-      run: node_modules\.bin\prebuildify --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: windows
-        path: prebuilds
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: npm install --global node-gyp prebuildify
+      - run: yarn apply-libuiohook-patch
+      - run: yarn --frozen-lockfile --ignore-scripts
+      - name: Patch prebuildify and node-abi
+        shell: cmd
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/prebuildify/index.js'; let s = fs.readFileSync(f, 'utf8'); s = s.replace('proc.spawn(opts.nodeGyp, args, {', 'proc.spawn(opts.nodeGyp, args, { shell: true,'); fs.writeFileSync(f, s);"
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+      - name: Prebuild x64
+        shell: cmd
+        run: node_modules\.bin\prebuildify --runtime electron --target %ELECTRON_VERSION% --arch x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: prebuilds
 
   prebuild-linux:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: |
-        sudo apt-get update
-        sudo apt-get install -y libxrandr-dev libxtst-dev
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile
-    - name: Patch node-abi
-      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('${{ env.ELECTRON_VERSION }}')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'${{ env.ELECTRON_VERSION }}\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: linux
-        path: prebuilds
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libxrandr-dev libxtst-dev
+      - run: yarn apply-libuiohook-patch
+      - run: yarn --frozen-lockfile
+      - name: Patch node-abi
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: prebuilds
 
   prebuild-darwin-x64:
     runs-on: macos-15-intel
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile
-    - name: Patch node-abi
-      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('${{ env.ELECTRON_VERSION }}')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'${{ env.ELECTRON_VERSION }}\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: darwin-x64
-        path: prebuilds
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: yarn apply-libuiohook-patch
+      - run: yarn --frozen-lockfile
+      - name: Patch node-abi
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-x64
+          path: prebuilds
 
   prebuild-darwin-arm64:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: actions/setup-node@v4
-    - run: yarn apply-libuiohook-patch
-    - run: yarn --frozen-lockfile
-    - name: Patch node-abi
-      run: node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); if (!s.includes('${{ env.ELECTRON_VERSION }}')) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'${{ env.ELECTRON_VERSION }}\', abi: \'137\' },'); fs.writeFileSync(f, s); }"
-    - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: darwin-arm64
-        path: prebuilds
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: yarn apply-libuiohook-patch
+      - run: yarn --frozen-lockfile
+      - name: Patch node-abi
+        run: |
+          node -e "const fs = require('fs'); const f = 'node_modules/node-abi/index.js'; let s = fs.readFileSync(f, 'utf8'); const target = process.env.ELECTRON_VERSION; if (!s.includes(target)) { s = s.replace('const allTargets = [', 'const allTargets = [{ runtime: \'electron\', target: \'' + target + '\', abi: \'145\' },'); fs.writeFileSync(f, s); }"
+      - run: yarn prebuild --runtime electron --target ${{ env.ELECTRON_VERSION }} --arch arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-arm64
+          path: prebuilds
 
   create-release:
     needs:
-    - prebuild-windows
-    - prebuild-linux
-    - prebuild-darwin-x64
-    - prebuild-darwin-arm64
+      [
+        prebuild-windows,
+        prebuild-linux,
+        prebuild-darwin-x64,
+        prebuild-darwin-arm64,
+      ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-    - uses: actions/download-artifact@v4
-      with:
-        path: prebuilds
-    - name: Rename and Prepare Assets
-      run: |
-        mv prebuilds/windows/win32-x64/node.napi.node nerimity-ptt-windows-x64.node
-        mv prebuilds/linux/linux-x64/node.napi.node nerimity-ptt-linux-x64.node
-        mv prebuilds/linux/linux-arm64/node.napi.node nerimity-ptt-linux-arm64.node
-        mv prebuilds/darwin-x64/darwin-x64/node.napi.node nerimity-ptt-darwin-x64.node
-        mv prebuilds/darwin-arm64/darwin-arm64/node.napi.node nerimity-ptt-darwin-arm64.node
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: prebuilds-${{ env.ELECTRON_VERSION }}-${{ github.sha }}
-        name: Prebuilds Electron ${{ env.ELECTRON_VERSION }}
-        draft: false
-        prerelease: false
-        files: |
-          nerimity-ptt-windows-x64.node
-          nerimity-ptt-linux-x64.node
-          nerimity-ptt-linux-arm64.node
-          nerimity-ptt-darwin-x64.node
-          nerimity-ptt-darwin-arm64.node
+      - uses: actions/download-artifact@v4
+        with:
+          path: prebuilds
+      - name: Rename and Prepare Assets
+        run: |
+          mv prebuilds/windows/win32-x64/node.napi.node nerimity-ptt-windows-x64.node
+          mv prebuilds/linux/linux-x64/node.napi.node nerimity-ptt-linux-x64.node
+          mv prebuilds/linux/linux-arm64/node.napi.node nerimity-ptt-linux-arm64.node
+          mv prebuilds/darwin-x64/darwin-x64/node.napi.node nerimity-ptt-darwin-x64.node
+          mv prebuilds/darwin-arm64/darwin-arm64/node.napi.node nerimity-ptt-darwin-arm64.node
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "prebuilds-${{ env.ELECTRON_VERSION }}-${{ github.sha }}"
+          name: "Prebuilds Electron ${{ env.ELECTRON_VERSION }}"
+          files: |
+            nerimity-ptt-windows-x64.node
+            nerimity-ptt-linux-x64.node
+            nerimity-ptt-linux-arm64.node
+            nerimity-ptt-darwin-x64.node
+            nerimity-ptt-darwin-arm64.node
