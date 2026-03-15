@@ -104,13 +104,21 @@ jobs:
         name: darwin-arm64
         path: prebuilds/darwin-arm64
 
-    - name: Archive prebuilds
+    - name: Rename prebuilds
       run: |
-        cd prebuilds
-        zip -r ../prebuilds-windows.zip windows/
-        zip -r ../prebuilds-linux.zip linux/
-        zip -r ../prebuilds-darwin-x64.zip darwin-x64/
-        zip -r ../prebuilds-darwin-arm64.zip darwin-arm64/
+        echo "=== Windows ==="
+        find prebuilds/windows -type f
+        echo "=== Linux ==="
+        find prebuilds/linux -type f
+        echo "=== Darwin x64 ==="
+        find prebuilds/darwin-x64 -type f
+        echo "=== Darwin arm64 ==="
+        find prebuilds/darwin-arm64 -type f
+        mv prebuilds/windows/$(ls prebuilds/windows/) nerimity-ptt-windows-x64.node
+        mv prebuilds/linux/$(ls prebuilds/linux/x64/) nerimity-ptt-linux-x64.node
+        mv prebuilds/linux/$(ls prebuilds/linux/arm64/) nerimity-ptt-linux-arm64.node
+        mv prebuilds/darwin-x64/$(ls prebuilds/darwin-x64/) nerimity-ptt-darwin-x64.node
+        mv prebuilds/darwin-arm64/$(ls prebuilds/darwin-arm64/) nerimity-ptt-darwin-arm64.node
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -120,7 +128,8 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          prebuilds-windows.zip
-          prebuilds-linux.zip
-          prebuilds-darwin-x64.zip
-          prebuilds-darwin-arm64.zip
+          nerimity-ptt-windows-x64.node
+          nerimity-ptt-linux-x64.node
+          nerimity-ptt-linux-arm64.node
+          nerimity-ptt-darwin-x64.node
+          nerimity-ptt-darwin-arm64.node
