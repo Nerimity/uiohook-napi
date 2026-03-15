@@ -6,9 +6,6 @@ on:
       electron_version:
         description: "Electron version to build for"
         required: true
-  push:
-    branches:
-      - master
 
 env:
   ELECTRON_VERSION: "${{ github.event.inputs.electron_version || '41.0.2' }}"
